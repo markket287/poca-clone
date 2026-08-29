@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1010993642117",
+    "project_id": "poca-clone",
+    "storage_bucket": "poca-clone.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1010993642117:android:0382e014acdd92355dc7ec",
+        "android_client_info": {
+          "package_name": "com.example.poca_clone"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1010993642117-0rs7honunuhasbe68v63omuqr1lkn4oh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCCpp-mHYMC7ChjNoKgZ5zT08rw2I9wKhg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1010993642117-0rs7honunuhasbe68v63omuqr1lkn4oh.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
