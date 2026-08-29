@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.pink),
       home: FirebaseAuth.instance.currentUser != null
-          ? const HomeScreen()
+          ? const HomeScreen(userName: 'Guest User', userGender: 'male')
           : const LoginScreen(),
     );
   }
