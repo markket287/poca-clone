@@ -3,12 +3,11 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-// ⚠️ APNAR PC-ER IPv4 ADDRESS BOSAN (CMD -> ipconfig)
-// Example: 'http://192.168.0.105:3000'
-const String SERVER_URL = 'http://192.168.0.105:3000';
+// ⚠️ আপনার পিসির নতুন IPv4 Address বসানো হয়েছে
+const String SERVER_URL = 'http://192.168.0.199:3000';
 
 // ⚠️ AGORA APP ID (Agora Console theke paben)
-const String AGORA_APP_ID = "YOUR_AGORA_APP_ID_HERE";
+const String AGORA_APP_ID = "90968e54379c4bbab2376478da2b0d15";
 
 void main() {
   runApp(const PocaApp());
