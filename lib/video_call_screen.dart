@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 
-const String appId = "63de73f77f024115a32142f0121b5532";
+const String appId = "90968e54379c4bbab2376478da2b0d15";
 
 class VideoCallScreen extends StatefulWidget {
   final String channelName;
@@ -11,7 +12,7 @@ class VideoCallScreen extends StatefulWidget {
   const VideoCallScreen({
     super.key, 
     required this.channelName, 
-    this.initialCoins = 100 // ডেমো হিসেবে ১০০ কয়েন
+    this.initialCoins = 100 // ডেমো হিসেবে ১০০ কয়েন
   });
 
   @override
@@ -19,7 +20,7 @@ class VideoCallScreen extends StatefulWidget {
 }
 
 class _VideoCallScreenState extends State<VideoCallScreen> {
-  int? _remoteUid; // int এর পর একটি ? চিহ্ন এবং সেমিকোলন
+  int? _remoteUid;
   bool _localUserJoined = false;
   bool _muted = false;
   late RtcEngine _engine;
@@ -35,20 +36,23 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     initAgora();
   }
 
-  // প্রতি ১ মিনিটে ১০ কয়েন কাটার লজিক
+  // প্রতি ১ মিনিটে ১০ কয়েন কাটার লজিক
   void _startCoinDeduction() {
+    _coinTimer?.cancel();
     _coinTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
+
       setState(() {
         _callDurationSeconds++;
       });
 
-      // প্রতি ৬০ সেকেন্ডে ১০ কয়েন কাটা যাবে
+      // প্রতি ৬০ সেকেন্ডে ১০ কয়েন কাটা যাবে
       if (_callDurationSeconds % 60 == 0) {
         setState(() {
           userCoins -= 10;
         });
 
-        // কয়েন শেষ হয়ে গেলে কল অটোমেটিক কেটে যাবে
+        // কয়েন শেষ হয়ে গেলে কল অটোমেটিক কেটে যাবে
         if (userCoins <= 0) {
           _coinTimer?.cancel();
           ScaffoldMessenger.of(context).showSnackBar(
@@ -61,20 +65,29 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   }
 
   Future<void> initAgora() async {
+    // ১. ক্যামেরা ও মাইক্রোফোন পারমিশন নেওয়া
+    await [Permission.camera, Permission.microphone].request();
+
+    // ২. Agora Engine ইনিশিয়ালাইজ করা
     _engine = createAgoraRtcEngine();
     await _engine.initialize(const RtcEngineContext(
       appId: appId,
       channelProfile: ChannelProfileType.channelProfileCommunication,
     ));
 
+    // ৩. ইভেন্ট হ্যান্ডলার রেজিস্টার করা
     _engine.registerEventHandler(
       RtcEngineEventHandler(
         onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
-          setState(() => _localUserJoined = true);
+          if (mounted) {
+            setState(() => _localUserJoined = true);
+          }
         },
         onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
-          setState(() => _remoteUid = remoteUid);
-          _startCoinDeduction(); // পার্টনার জয়েন করলেই টাইমার চালু হবে
+          if (mounted) {
+            setState(() => _remoteUid = remoteUid);
+            _startCoinDeduction(); // পার্টনার জয়েন করলেই টাইমার চালু হবে
+          }
         },
         onUserOffline: (RtcConnection connection, int remoteUid, UserOfflineReasonType reason) {
           _coinTimer?.cancel();
@@ -83,13 +96,19 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       ),
     );
 
+    // ৪. ভিডিও ও প্রিভিউ এনাবল করা
     await _engine.enableVideo();
     await _engine.startPreview();
+
+    // ৫. চ্যানেলে জয়েন করা (ChannelMediaOptions সঠিকভাবে সেট করা হয়েছে)
     await _engine.joinChannel(
-      token: '',
+      token: '007eJxTYEjump2jq7lyRsepBRdupQYlMwo0ypVvvv6RgVkjxPTGt+cKDJYGlmYWqaYmxuaWySZJSYlJRsbmZibmFimJRkkGKYamseXTshoCGRkiC64yMEIhiM/JUJCfnBhfklpcwsAAALvGINk=',
       channelId: widget.channelName,
       uid: 0,
-      options: const ChannelMediaOptions(),
+      options: const ChannelMediaOptions(
+        clientRoleType: ClientRoleType.clientRoleBroadcaster,
+        channelProfile: ChannelProfileType.channelProfileCommunication,
+      ),
     );
   }
 
@@ -109,7 +128,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
         children: [
           Center(child: _remoteVideo()),
 
-          // টপ লেফট: কয়েন ও কল টাইমার কাউন্টার UI (Poca Style)
+          // টপ লেফট: কয়েন ও কল টাইমার কাউন্টার UI (Poca Style)
           Positioned(
             top: 45,
             left: 16,
