@@ -102,7 +102,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
     // ৫. চ্যানেলে জয়েন করা (ChannelMediaOptions সঠিকভাবে সেট করা হয়েছে)
     await _engine.joinChannel(
-      token: '007eJxTYEjump2jq7lyRsepBRdupQYlMwo0ypVvvv6RgVkjxPTGt+cKDJYGlmYWqaYmxuaWySZJSYlJRsbmZibmFimJRkkGKYamseXTshoCGRkiC64yMEIhiM/JUJCfnBhfklpcwsAAALvGINk=',
+      token: '',
       channelId: widget.channelName,
       uid: 0,
       options: const ChannelMediaOptions(
