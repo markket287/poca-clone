@@ -3,10 +3,10 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-// ⚠️ আপনার পিসির নতুন IPv4 Address বসানো হয়েছে
+// ⚠️ আপনার পিসির IPv4 Address
 const String SERVER_URL = 'http://192.168.0.199:3000';
 
-// ⚠️ AGORA APP ID (Agora Console theke paben)
+// ⚠️ AGORA APP ID
 const String AGORA_APP_ID = "90968e54379c4bbab2376478da2b0d15";
 
 void main() {
@@ -176,7 +176,7 @@ class MatchScreen extends StatefulWidget {
 class _MatchScreenState extends State<MatchScreen> {
   late IO.Socket socket;
   bool isMatching = false;
-  String targetGender = 'female'; // Default target gender
+  String targetGender = 'female';
 
   @override
   void initState() {
@@ -194,13 +194,11 @@ class _MatchScreenState extends State<MatchScreen> {
       print('Connected to Socket Server: ${socket.id}');
     });
 
-    // Handle Match Found from Node.js Server
     socket.on('match_found', (data) {
       if (mounted) {
         setState(() => isMatching = false);
         String channelName = data['channelName'] ?? 'test_channel';
         
-        // Navigate to Call View Screen
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -222,7 +220,6 @@ class _MatchScreenState extends State<MatchScreen> {
 
     setState(() => isMatching = true);
 
-    // Emit 'find_match' with Gender preferences to Node.js Backend
     socket.emit('find_match', {
       'gender': 'male',
       'targetGender': targetGender,
@@ -247,7 +244,6 @@ class _MatchScreenState extends State<MatchScreen> {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            // Top Filter Options
             Positioned(
               top: 15,
               right: 20,
@@ -267,8 +263,6 @@ class _MatchScreenState extends State<MatchScreen> {
                 ],
               ),
             ),
-
-            // Center Glowing Match Button
             Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -341,7 +335,7 @@ class _MatchScreenState extends State<MatchScreen> {
   }
 }
 
-// ------------------- 3. AGORA VIDEO CALL SCREEN -------------------
+// ------------------- 3. AGORA VIDEO CALL SCREEN (FIXED) -------------------
 class CallScreen extends StatefulWidget {
   final String channelName;
   const CallScreen({super.key, required this.channelName});
@@ -362,30 +356,36 @@ class _CallScreenState extends State<CallScreen> {
   }
 
   Future<void> initAgora() async {
+    // Permission Verification
     await [Permission.camera, Permission.microphone].request();
 
     _engine = createAgoraRtcEngine();
     await _engine.initialize(const RtcEngineContext(
       appId: AGORA_APP_ID,
-      channelProfile: ChannelProfileType.channelProfileLiveBroadcasting,
+      channelProfile: ChannelProfileType.channelProfileCommunication,
     ));
 
     _engine.registerEventHandler(
       RtcEngineEventHandler(
         onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
-          setState(() => _localUserJoined = true);
+          if (mounted) {
+            setState(() => _localUserJoined = true);
+          }
         },
         onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
-          setState(() => _remoteUid = remoteUid);
+          if (mounted) {
+            setState(() => _remoteUid = remoteUid);
+          }
         },
         onUserOffline: (RtcConnection connection, int remoteUid, UserOfflineReasonType reason) {
-          setState(() => _remoteUid = null);
-          Navigator.pop(context);
+          if (mounted) {
+            setState(() => _remoteUid = null);
+            Navigator.pop(context);
+          }
         },
       ),
     );
 
-    await _engine.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
     await _engine.enableVideo();
     await _engine.startPreview();
 
@@ -393,15 +393,22 @@ class _CallScreenState extends State<CallScreen> {
       token: '',
       channelId: widget.channelName,
       uid: 0,
-      options: const ChannelMediaOptions(),
+      options: const ChannelMediaOptions(
+        clientRoleType: ClientRoleType.clientRoleBroadcaster,
+        channelProfile: ChannelProfileType.channelProfileCommunication,
+      ),
     );
   }
 
   @override
   void dispose() {
-    _engine.leaveChannel();
-    _engine.release();
+    _clearAgora();
     super.dispose();
+  }
+
+  Future<void> _clearAgora() async {
+    await _engine.leaveChannel();
+    await _engine.release();
   }
 
   @override
@@ -410,15 +417,41 @@ class _CallScreenState extends State<CallScreen> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          Center(child: _remoteVideo()),
+          // Remote Video View
+          Center(
+            child: _remoteUid != null
+                ? AgoraVideoView(
+                    controller: VideoViewController.remote(
+                      rtcEngine: _engine,
+                      canvas: VideoCanvas(uid: _remoteUid),
+                      connection: RtcConnection(channelId: widget.channelName),
+                    ),
+                  )
+                : const Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(color: Colors.pinkAccent),
+                      SizedBox(height: 15),
+                      Text(
+                        'Connecting to Partner...',
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                    ],
+                  ),
+          ),
+          // Local Camera View (Preview)
           Positioned(
             top: 40,
             right: 20,
-            width: 100,
-            height: 140,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: Center(
+            width: 110,
+            height: 150,
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.white, width: 2),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
                 child: _localUserJoined
                     ? AgoraVideoView(
                         controller: VideoViewController(
@@ -426,10 +459,11 @@ class _CallScreenState extends State<CallScreen> {
                           canvas: const VideoCanvas(uid: 0),
                         ),
                       )
-                    : const CircularProgressIndicator(),
+                    : const Center(child: CircularProgressIndicator(color: Colors.white)),
               ),
             ),
           ),
+          // End Call Button
           Positioned(
             bottom: 40,
             left: 0,
@@ -445,23 +479,6 @@ class _CallScreenState extends State<CallScreen> {
         ],
       ),
     );
-  }
-
-  Widget _remoteVideo() {
-    if (_remoteUid != null) {
-      return AgoraVideoView(
-        controller: VideoViewController.remote(
-          rtcEngine: _engine,
-          canvas: VideoCanvas(uid: _remoteUid),
-          connection: RtcConnection(channelId: widget.channelName),
-        ),
-      );
-    } else {
-      return const Text(
-        'Connecting to Partner...',
-        style: TextStyle(color: Colors.white, fontSize: 16),
-      );
-    }
   }
 }
 
