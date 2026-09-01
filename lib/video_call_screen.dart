@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
 
-const String appId = "90968e54379c4bbab2376478da2b0d15";
+const String appId = "63de73f77f024115a32142f0121b5532";
 
 class VideoCallScreen extends StatefulWidget {
   final String channelName;
